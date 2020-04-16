@@ -4,10 +4,10 @@ import sys
 
 # TODO: complete
 def is_valid_turn(card, board, locations):
-	if locations == []:
-		# J
-		if card.number == 11:
-			return True
+    if locations == []:
+        # J
+        if card.number == 11:
+            return True
 
 class User():
     def __init__(self, user_id):

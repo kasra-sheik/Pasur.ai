@@ -19,6 +19,8 @@ class Pasur():
         self.deck = Deck()
         self.board = None
 
+
+
     #################
     # Game LOGIC   #
     ################# 
@@ -26,7 +28,6 @@ class Pasur():
         move = Move()
         move.add_card_played(card)
         move.add_card_taken(locations)
-
 
 
 
@@ -52,8 +53,6 @@ class Pasur():
         self.deal()
         self.board = Board(self.deck.draw4())
 
-
-        
         pass
 
 pasur = Pasur()
