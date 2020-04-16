@@ -1,0 +1,113 @@
+'''
+Kodiak Conrad
+kconrad1@uw.edu
+Passur Game State
+'''
+
+# def take_cards(hand):
+
+
+class Card:
+
+	SUITS = ["S", "H", "C", "D"]
+
+	def __init__(self, number, suit): # initialized with suit as index
+		self.number = number # no 0
+		self.suit = SUITS[suit]
+
+	def __str__(self):
+		if self.number == 1: n = "A"
+		elif self.number < 10:
+			n = str(self.number)
+		else:
+			if self.number == 11: n = "J"
+			if self.number == 12: n = "Q"
+			if self.number == 13: n = "K"
+		return n + " of " + SUITS[suit]
+
+	def __repr__(self): 
+		return str(self)
+
+	def __eq__(self, other):
+		return self.suit == other.suit and self.number == other.number
+
+class Deck:
+	suit_list = ['Spades', 'Clubs', 'Hearts', 'Diamonds']
+	deck = []
+	def __init__(self):
+		for suit in suit_list:
+			for n in range(1, 14):
+				card = Card(n, suit)
+				deck.add(card)
+		self.deck = random.shuffle(deck)
+		self.cards_left = 52
+	def remove(self):
+		cards_left -= 1
+		card = self.deck.remove()
+		return card
+
+	def __eq__(self, other):
+		if self.cards_left != other.cards_left:
+			return false
+		if self.deck != other.deck:
+			return false
+		return true
+
+class Board:
+	def __init__(card_list):
+		cards = card_list
+
+	def remove(card_list):
+		for card in card_list:
+			if !(card in cards):
+				print("error")
+			else:
+				cards.remove(card)
+
+	def add(card):
+		cards.append(card)
+
+	def __str__():
+		print cards
+
+
+c1 = Card(2, 'clubs')
+c2 = Card(3, 'clubs')
+
+hand = [c1, c2]
+print(hand)
+
+
+# class Passur_State:
+
+# 	def __init__(self, deck, board, players):
+# 		self.deck = deck
+# 		self.board = board
+# 		self.players = players
+
+# 	def __str__(self):
+# 		for x in board:
+# 			print(x)
+# 		print("There are " + str(len(self.deck)) + " cards left")
+
+# 	def __eq__(self, other):
+
+# 	def __hash__(self):
+
+# 	def copy(self):
+
+# 	def goal_test(s):
+
+# class Operator:
+# 	def __init__(self, name, precond, state_transf):
+# 		self.name = name
+# 		self.precond = precond
+# 		self.state_transf = state_transf
+
+# 	def is_applicable(self, s):
+# 		return self.precond(s)
+
+# 	def apply(self, s):
+#     	return self.state_transf(s)
+
+# GOAL_TEST = lambda s: goal_test(s)
