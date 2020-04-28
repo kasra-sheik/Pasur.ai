@@ -16,8 +16,9 @@ class Card:
 
     def __str__(self):
         n=""
-        if self.number == 1: n = "A"
-        elif self.number < 10:
+        if self.number == 1:
+            n = "A"
+        elif self.number <= 10:
             n = str(self.number)
         else:
             if self.number == 11: n = "J"
@@ -33,16 +34,16 @@ class Card:
 
 class Deck:
     def __init__(self):
-        deck = []
+        cards = []
         for suit in SUITS:
             for n in range(1, 14):
                 card = Card(n, suit)
-                deck.append(card)
-        random.shuffle(deck)
+                cards.append(card)
+        random.shuffle(cards)
 
-        self.deck = deck
+        self.cards = cards
     def draw(self):
-        card = self.deck.pop()
+        card = self.cards.pop()
         return card
     def draw4(self):
         deal = []
@@ -65,7 +66,7 @@ class Board:
         self.cards += card
 
     def __str__(self):
-        print(self.cards)
+        print(str(self.cards))
 
 class Move():
 

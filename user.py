@@ -17,7 +17,6 @@ class User():
 
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
-        self.socketio.on("test", self.test)
 
         self.socketio.connect()
         self.socketio.wait()
@@ -27,16 +26,19 @@ class User():
     def deal(self, new_hand):
         self.current_hand = new_hand
         hand = json.loads(new_hand)
-        print(hand)
-        for card in hand:
-            print(card)
-            tpl = (card["number"], card["suit"])
-            getAscii(card_dict[tpl])
+        print("Your hand")
+        printAscii(hand)
+            # deal with ascii later
 
 
-    def action(self, board, move, your_turn):
-        pass
-    def test(self, message):
+    def action(self, data):
+        # data[0] -> board.cards
+        # data[1] -> last_move
+        # data[2] -> your_turn
+        game_state = json.loads(data)
+        print("Board")
+        printAscii(game_state[0])
+        # TODO: deal with work flow
         pass
         
     def is_valid_turn(card, board, locations):
@@ -95,20 +97,23 @@ class HumanUser(User):
         card_chosen = self.current_hand[index_chosen]
         return card_chosen
 
-    def action(self, board, move, your_turn):
-        if your_turn:            
-            return self.make_move()
-        else:
-            print(board, move)
-
-    def test(self, message):
-        print(message)
+    def action(self, data):
+        super().action(data)
+        pass
 
 
-def getAscii(file):
-    path = "ascii-cards/{0}".format(file)
-    f = open(path, "r")
-    print(f.read())
-    f.close()
+def printAscii(cards):
+    files = []
+    for card in cards:
+            tpl = (card["number"], card["suit"])
+            file = card_dict[tpl]
+            path = "ascii-cards/{0}".format(file)
+            files.append(open(path, "r"))
+    for rows in zip(*files):
+        for x in rows:
+            print(x.strip("\n"), end = " ")
+        print()
+    for file in files:
+        file.close()
     
 human = HumanUser(sys.argv[1])

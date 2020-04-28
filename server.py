@@ -13,27 +13,22 @@ from pasur_state import *
 class PasurJSONEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Card):
-            return { 'number' : obj.number, 'suit' : obj.suit}
+            return { "number" : obj.number, "suit" : obj.suit}
+        if isinstance(obj, Move):
+            return { "played" : obj.played, "taken" : obj.taken}
         # TODO: finish for other objects
         return json.JSONEncoder.default(self, obj) # default, if not Card object. 
 
 
-app = Flask(__name__)
-app.json_encoder = PasurJSONEncoder
-socketio = SocketIO(app)
-
-# @socketio.on('hello')
-# def test_message(message):
-#     print("hey we got a hello")
-#     print(message)
-#     emit({'response' : message})
-
 # GAME MANAGER
+
 class Pasur():
     def __init__(self):
+        self.ticker = 0 # how many moves left before new deal
         self.users = []
         self.deck = Deck()
         self.board = None
+        self.last_move = None
 
 
 
@@ -60,18 +55,45 @@ class Pasur():
     def deal(self):
         for user in self.users:
             new_cards = self.deck.draw4()
-            print(new_cards)
-            c = json.dumps(new_cards, cls=PasurJSONEncoder)
-            socketio.emit("deal", c, room=user)
+            data = json.dumps(new_cards, cls=PasurJSONEncoder, indent=4)
+            socketio.emit("deal", data, room=user)
 
     def start_game(self):
-        #pull 12 cards, 
-        self.deal()
         self.board = Board(self.deck.draw4())
+        print(self.board.cards)
+        self.prompt_action()
+        pass
 
+    def prompt_action(self): 
+        print("ticker = {}".format(self.ticker))
+        if self.ticker == 0:
+            self.deal()
+            self.ticker = 8
+        turn_data = json.dumps((self.board.cards, self.last_move, True), cls=PasurJSONEncoder, indent=4)
+        wait_data = json.dumps((self.board.cards, self.last_move, False), cls=PasurJSONEncoder, indent=4)
+        if self.ticker % 2 == 0:
+            socketio.emit("action", turn_data, room=self.users[0])
+            socketio.emit("action", wait_data, room=self.users[1])
+        else:
+            socketio.emit("action", turn_data, room=self.users[1])
+            socketio.emit("action", wait_data, room=self.users[0])
+            pass
+        self.ticker -= 1
         pass
 
 pasur = Pasur()
+
+app = Flask(__name__)
+app.json_encoder = PasurJSONEncoder
+socketio = SocketIO(app)
+
+@socketio.on('receive_action')
+def receive_action(self): 
+        # update game state
+        pasur.board = ""
+        pasur.last_move = ""
+        pasur.prompt_action()
+
 
 @socketio.on('join_game')
 def join_game(user):
