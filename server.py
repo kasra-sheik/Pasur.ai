@@ -1,9 +1,25 @@
-from flask import Flask
+from flask import Flask, jsonify
+from flask.json import JSONEncoder
 from flask_socketio import SocketIO, emit, join_room
+import json
+
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 from pasur_state import *
 
+
+class PasurJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Card):
+            return { 'number' : obj.number, 'suit' : obj.suit}
+        # TODO: finish for other objects
+        return json.JSONEncoder.default(self, obj) # default, if not Card object. 
+
+
 app = Flask(__name__)
+app.json_encoder = PasurJSONEncoder
 socketio = SocketIO(app)
 
 # @socketio.on('hello')
@@ -30,8 +46,6 @@ class Pasur():
         move.add_card_taken(locations)
 
 
-
-
     #################
     # NETWORK LOGIC #
     #################
@@ -46,7 +60,9 @@ class Pasur():
     def deal(self):
         for user in self.users:
             new_cards = self.deck.draw4()
-            socketio.emit("deal", new_cards, room=user)
+            print(new_cards)
+            c = json.dumps(new_cards, cls=PasurJSONEncoder)
+            socketio.emit("deal", c, room=user)
 
     def start_game(self):
         #pull 12 cards, 
@@ -68,11 +84,7 @@ def join_game(user):
 
 @socketio.on('turn')
 def turn(card):
-
-
-
-
-
+    print("temp")
 
 
 if __name__ == '__main__':
