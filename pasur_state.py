@@ -4,12 +4,13 @@ kconrad1@uw.edu
 Passur Game State
 '''
 
-import random
+import random as r
+import json
+from flask.json import JSONEncoder
 
 SUITS = ["S", "H", "C", "D"]
 
 class Card:
-
     def __init__(self, number, suit): # initialized with suit as string
         self.number = number # no 0
         self.suit = suit
@@ -39,7 +40,7 @@ class Deck:
             for n in range(1, 14):
                 card = Card(n, suit)
                 cards.append(card)
-        random.shuffle(cards)
+        r.shuffle(cards)
 
         self.cards = cards
     def draw(self):
@@ -50,18 +51,18 @@ class Deck:
         for _ in range(4):
             deal.append(self.draw())
         return deal
+    def replace(self, card):
+        i = r.randint(1, len(self.cards))
+        self.cards.insert(i, card)
+        return self.draw()
+
 
 class Board:
     def __init__(self, starting_cards):
         self.cards = starting_cards
 
     def remove(self, card_list):
-        for card in card_list:
-            if not (card in self.cards):
-                print("error")
-            else:
-                self.cards.remove(card)
-
+        self.cards = [c for c in self.cards if c not in card_list]
     def add(self, card):
         self.cards += card
 
@@ -85,40 +86,27 @@ class Move():
 
     def get_taken(self):
         return self.taken
+    def __str__(self):
+        return("Card Played: {0} \nCard(s) Taken: {1}".format(str(self.played), str(self.taken)))
 
 
 
+class PasurJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Card):
+            return { 'number' : obj.number, 'suit' : obj.suit}
+        if isinstance(obj, Move):
+            return { 'played': obj.played, 'taken' : obj.taken}
+        # TODO: finish for other objects
+        return json.JSONEncoder.default(self, obj) # default, if not Card object. 
 
-# class Passur_State:
+def get_move_from_json(move_json):
+    card_json = move_json['played']
+    taken_json = move_json['taken']
+    card = Card(card_json['number'], card_json['suit'])
+    taken = [Card(card['number'], card['suit']) for card in taken_json]
+    move = Move()
+    move.played = card
+    move.taken = taken
+    return move
 
-#   def __init__(self, deck, board, players):
-#       self.deck = deck
-#       self.board = board
-#       self.players = players
-
-#   def __str__(self):
-#       for x in board:
-#           print(x)
-#       print("There are " + str(len(self.deck)) + " cards left")
-
-#   def __eq__(self, other):
-
-#   def __hash__(self):
-
-#   def copy(self):
-
-#   def goal_test(s):
-
-# class Operator:
-#   def __init__(self, name, precond, state_transf):
-#       self.name = name
-#       self.precond = precond
-#       self.state_transf = state_transf
-
-#   def is_applicable(self, s):
-#       return self.precond(s)
-
-#   def apply(self, s):
-#       return self.state_transf(s)
-
-# GOAL_TEST = lambda s: goal_test(s)

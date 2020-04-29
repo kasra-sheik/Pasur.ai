@@ -7,9 +7,9 @@ from pasur_state import *
 from card_dictionary import card_dict
 
 CARD_HEADER = "    ({})     "
-INSTR_1 = "Input the number of the Card you want to play"
-INSTR_2 = ("Input the location(s) you want to put it seperated by spaces \n"
-           "or press enter to place in a new location")
+INSTR_1 = "Input the index of the Card you want to play "
+INSTR_2 = ("Input the location(s) you want to place it seperated by spaces \n"
+           "or press enter to place in a new location ")
 
 class User():
     def __init__(self, user_id):
@@ -21,6 +21,7 @@ class User():
 
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
+        self.socketio.on("broadcast_move", self.broadcast_move)
 
         self.socketio.connect()
         self.socketio.wait()
@@ -33,22 +34,26 @@ class User():
     def action(self, data):
         pass
 
+    def broadcast_move(self, data):
+        pass
+
 class HumanUser(User):
-    # TODO: grab chosen card + location + call is valid turn
+    
+    def deal(self, hand):
 
-    def make_move(self):
-        index_chosen = input("choose a card")
-        card_chosen = self.current_hand[index_chosen]
-        return card_chosen
-
-    def deal(self, new_hand):
-        hand = json.loads(new_hand)
         self.current_hand = [Card(card['number'], card['suit']) for card in hand]
         # print("Your hand")
         # printAscii(self.current_hand)
 
-    def action(self, data):
-        game_state = json.loads(data)
+    def broadcast_move(self, move_json, my_move):
+        move = get_move_from_json(move_json)
+        if not my_move:
+            print("Opponent made move \n{}".format(str(move)))
+        else:
+            print("You made move \n{}".format(str(move)))
+        print()
+
+    def action(self, game_state):
         # game_state[0] -> board.cards
         # game_state[1] -> last_move
         # game_state[2] -> your_turn
@@ -57,7 +62,7 @@ class HumanUser(User):
         board = Board(board_cards)
         print("Board")
         for i in range(len(board.cards)):
-            print(CARD_HEADER.format(str(i+1)), end = '')
+            print(CARD_HEADER.format(str(i)), end = '')
         print(CARD_HEADER.format(" "))
         printAscii(board_cards)
         print("Your hand")
@@ -66,67 +71,87 @@ class HumanUser(User):
         print()
         printAscii(self.current_hand)
         if game_state[2]: 
-            print(INSTR_1)
-            card_num = int(input())
-            card = self.current_hand[card_num]
-            print(INSTR_2)
-            l = input()
-            locs = [int(x) for x in l.split()]
-            print(locs)
-            print(is_valid_turn(card, board, locs))
+            can_move = False
+            while not can_move:
+                # print(INSTR_1)
+                card_index = int(input(INSTR_1))
+                card = self.current_hand[card_index]
+                # print(INSTR_2)
+                locs = input(INSTR_2)
+                locations = [int(x) for x in locs.split()]
+                can_move = self.is_valid_turn(card, board, locations)
+                if not can_move:
+                    print("Invalid Move. Please try again")
+                else:
+                    print()
+                    self.make_move(card, board, locations)
 
-        
-def is_valid_turn(card, board, locations):
-    # card is type Card
-    # board is type Board
-    # locations is a list
-    if locations == []:
-        # Jack
+    
+    def make_move(self, card, board, locations):
+        move = Move()
+        move.played = card
         if card.number == 11:
-            return True
+            move.taken = [c for c in board.cards if c.number < 12]
+            move.taken.append(card)
+        elif not locations: # placed card on board
+            move.taken = []
+        else: #not jack, not empty
+            move.taken = [card]
+            move.taken.extend([board.cards[loc] for loc in locations])
+        move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
+        self.socketio.emit('player_action', move_data)
+        self.current_hand.remove(card)
+            
+    def is_valid_turn(self, card, board, locations):
+        # card is type Card
+        # board is type Board
+        # locations is a list
+        if locations == []:
+            # Jack
+            if card.number == 11:
+                return True
 
-        # Q, K
-        elif card.number > 11:
-            # return fasle if that same card number is on the board
-            return not card.number in [board_card.number for board_card in board.cards]
+            # Q, K
+            elif card.number > 11:
+                # return fasle if that same card number is on the board
+                return not card.number in [board_card.number for board_card in board.cards]
 
-        # Numbered Card
-        else:
-            compliment = 11 - card.number 
-            number_list = [board_card.number for board_card in board.cards if board_card.number < 11]
-            return not checkSum(number_list, compliment, len(number_list))
-    else:
-        for loc in locations:
-            if loc >= len(board.cards):
-                return False
-        # J
-        if card.number == 11:
-            return False
-
-        # Q, K
-        elif card.number > 11:
-
-            if len(locations) > 1:
-                return False
+            # Numbered Card
             else:
-                return card.number == board.cards[locations[0]].number
-
-        # Numbered Card
+                compliment = 11 - card.number 
+                number_list = [board_card.number for board_card in board.cards if board_card.number < 11]
+                return not self.checkSum(number_list, compliment, len(number_list))
         else:
-            return 11 == card.number + sum(board.cards[loc].number for loc in locations)
+            for loc in locations:
+                if loc >= len(board.cards):
+                    return False
+            # J
+            if card.number == 11:
+                return False
+
+            # Q, K
+            elif card.number > 11:
+
+                if len(locations) > 1:
+                    return False
+                else:
+                    return card.number == board.cards[locations[0]].number
+
+            # Numbered Card
+            else:
+                return 11 == card.number + sum(board.cards[loc].number for loc in locations)
 
 
-#subset sum problem, finally get to use DP in real life!!!
-def checkSum(number_list, sum, n):
-    if sum == 0: # base case where we have reached sum
-        return True
-    elif n == 0: # base case where we did not reach sum
-        return False 
-    elif number_list[n-1] > sum: # number is larger than sum
-        return checkSum(number_list, sum, n-1)
-    else: 
-        return checkSum(number_list, sum, n-1) or checkSum(number_list, sum - number_list[n-1], n-1)
-
+    #subset sum problem, finally get to use DP in real life!!!
+    def checkSum(self, number_list, sum, n):
+        if sum == 0: # base case where we have reached sum
+            return True
+        elif n == 0: # base case where we did not reach sum
+            return False 
+        elif number_list[n-1] > sum: # number is larger than sum
+            return self.checkSum(number_list, sum, n-1)
+        else: 
+            return self.checkSum(number_list, sum, n-1) or checkSum(number_list, sum - number_list[n-1], n-1)
 
 def printAscii(cards):
     files = []
