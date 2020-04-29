@@ -13,9 +13,9 @@ from pasur_state import *
 class PasurJSONEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Card):
-            return { "number" : obj.number, "suit" : obj.suit}
+            return { 'number' : obj.number, 'suit' : obj.suit}
         if isinstance(obj, Move):
-            return { "played" : obj.played, "taken" : obj.taken}
+            return { 'played': obj.played, 'taken' : obj.taken}
         # TODO: finish for other objects
         return json.JSONEncoder.default(self, obj) # default, if not Card object. 
 
@@ -65,7 +65,7 @@ class Pasur():
         pass
 
     def prompt_action(self): 
-        print("ticker = {}".format(self.ticker))
+        # print("ticker = {}".format(self.ticker))
         if self.ticker == 0:
             self.deal()
             self.ticker = 8

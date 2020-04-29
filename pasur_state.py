@@ -10,7 +10,7 @@ SUITS = ["S", "H", "C", "D"]
 
 class Card:
 
-    def __init__(self, number, suit): # initialized with suit as index
+    def __init__(self, number, suit): # initialized with suit as string
         self.number = number # no 0
         self.suit = suit
 
@@ -24,7 +24,7 @@ class Card:
             if self.number == 11: n = "J"
             if self.number == 12: n = "Q"
             if self.number == 13: n = "K"
-        return n + " of " + self.suit
+        return n + self.suit
 
     def __repr__(self): 
         return str(self)
