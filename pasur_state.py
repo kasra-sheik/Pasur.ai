@@ -53,8 +53,7 @@ class Deck:
         return deal
     def replace(self, card):
         i = r.randint(1, len(self.cards))
-        self.cards.insert(i, card)
-        return self.draw()
+        self.cards.insert(i, card) 
 
 
 class Board:
@@ -64,7 +63,7 @@ class Board:
     def remove(self, card_list):
         self.cards = [c for c in self.cards if c not in card_list]
     def add(self, card):
-        self.cards += card
+        self.cards.append(card)
 
     def __str__(self):
         print(str(self.cards))
