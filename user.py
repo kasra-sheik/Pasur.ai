@@ -22,7 +22,10 @@ class User():
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
         self.socketio.on("broadcast_move", self.broadcast_move)
+<<<<<<< HEAD
         self.socketio.on("result", self.result)
+=======
+>>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
 
         self.socketio.connect()
         self.socketio.wait()
@@ -38,9 +41,12 @@ class User():
     def broadcast_move(self, data):
         pass
 
+<<<<<<< HEAD
     def result(self, data):
         pass
 
+=======
+>>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
     def is_valid_turn(self, card, board, locations):
         # card is type Card
         # board is type Board
@@ -94,7 +100,14 @@ class User():
 class HumanUser(User):
 
     def deal(self, hand):
+<<<<<<< HEAD
         self.current_hand = [Card(card['number'], card['suit']) for card in hand]
+=======
+
+        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
+        # print("Your hand")
+        # printAscii(self.current_hand)
+>>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
 
     def broadcast_move(self, move_json, my_move):
         move = get_move_from_json(move_json)
@@ -155,10 +168,13 @@ class HumanUser(User):
         move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
         self.socketio.emit('player_action', move_data)
         self.current_hand.remove(card)
+<<<<<<< HEAD
 
     def result(self, data):
         print(result)
         pass
+=======
+>>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
             
 # end of Human_User
 
