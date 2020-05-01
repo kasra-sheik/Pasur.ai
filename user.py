@@ -21,32 +21,28 @@ class User():
 
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
-        self.socketio.on("broadcast_move", self.broadcast_move)
-<<<<<<< HEAD
+        self.socketio.on("broadcast_move", self.receive_move)
         self.socketio.on("result", self.result)
-=======
->>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
+
 
         self.socketio.connect()
         self.socketio.wait()
 
         # call join game
 
-    def deal(self, new_hand):
-        pass
+    def deal(self, hand):
+        # accept cards and put into hand
+        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
 
     def action(self, data):
         pass
 
-    def broadcast_move(self, data):
+    def receive_move(self, move_json, my_move):
         pass
 
-<<<<<<< HEAD
     def result(self, data):
         pass
 
-=======
->>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
     def is_valid_turn(self, card, board, locations):
         # card is type Card
         # board is type Board
@@ -99,17 +95,8 @@ class User():
 
 class HumanUser(User):
 
-    def deal(self, hand):
-<<<<<<< HEAD
-        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
-=======
-
-        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
-        # print("Your hand")
-        # printAscii(self.current_hand)
->>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
-
-    def broadcast_move(self, move_json, my_move):
+    def receive_move(self, move_json, my_move):
+        # receive previious move from server
         move = get_move_from_json(move_json)
         if not my_move:
             print("Opponent made move \n{}".format(str(move)))
@@ -118,6 +105,8 @@ class HumanUser(User):
         print()
 
     def action(self, game_state):
+        # make move
+
         # game_state[0] -> board.cards
         # game_state[1] -> last_move
         # game_state[2] -> your_turn
@@ -151,7 +140,10 @@ class HumanUser(User):
                     print("Invalid Move. Please try again")
                 else:
                     print()
-                    self.make_move(card, board, locations)
+                    move = self.make_move(card, board, locations)
+                    move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
+                    self.socketio.emit('player_action', move_data)
+                    self.current_hand.remove(card)
 
     
     def make_move(self, card, board, locations):
@@ -165,16 +157,12 @@ class HumanUser(User):
         else: #not jack, not empty
             move.taken = [card]
             move.taken.extend([board.cards[loc] for loc in locations])
-        move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
-        self.socketio.emit('player_action', move_data)
-        self.current_hand.remove(card)
-<<<<<<< HEAD
+        return move
+        
 
     def result(self, data):
         print(result)
         pass
-=======
->>>>>>> 1c8a4fe675ade398819b105d554ec6d39812ebde
             
 # end of Human_User
 
@@ -190,5 +178,6 @@ def printAscii(cards):
         print()
     for file in files:
         file.close()
-    
-human = HumanUser(sys.argv[1])
+  
+if __name__ == '__main__':  
+    human = HumanUser(sys.argv[1])
