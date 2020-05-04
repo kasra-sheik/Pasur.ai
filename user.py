@@ -43,6 +43,19 @@ class User():
     def result(self, data):
         pass
 
+    def make_move(self, card, board, locations):
+        move = Move()
+        move.played = card
+        if card.number == 11:
+            move.taken = [c for c in board.cards if c.number < 12]
+            move.taken.append(card)
+        elif not locations: # placed card on board
+            move.taken = []
+        else: #not jack, not empty
+            move.taken = [card]
+            move.taken.extend([board.cards[loc] for loc in locations])
+        return move
+
     def is_valid_turn(self, card, board, locations):
         # card is type Card
         # board is type Board
@@ -106,10 +119,8 @@ class HumanUser(User):
 
     def action(self, game_state):
         # make move
-
         # game_state[0] -> board.cards
-        # game_state[1] -> last_move
-        # game_state[2] -> your_turn
+        # game_state[1] -> your_turn
 
         board_cards = [Card(card['number'], card['suit']) for card in game_state[0]]
         board = Board(board_cards)
@@ -123,7 +134,7 @@ class HumanUser(User):
             print(CARD_HEADER.format(str(i)), end = '')
         print()
         printAscii(self.current_hand)
-        if game_state[2]: 
+        if game_state[1]: 
             can_move = False
             while not can_move:
                 try:
@@ -144,20 +155,6 @@ class HumanUser(User):
                     move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
                     self.socketio.emit('player_action', move_data)
                     self.current_hand.remove(card)
-
-    
-    def make_move(self, card, board, locations):
-        move = Move()
-        move.played = card
-        if card.number == 11:
-            move.taken = [c for c in board.cards if c.number < 12]
-            move.taken.append(card)
-        elif not locations: # placed card on board
-            move.taken = []
-        else: #not jack, not empty
-            move.taken = [card]
-            move.taken.extend([board.cards[loc] for loc in locations])
-        return move
         
 
     def result(self, data):

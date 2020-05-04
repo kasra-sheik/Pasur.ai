@@ -54,7 +54,8 @@ class Deck:
     def replace(self, card):
         i = r.randint(1, len(self.cards))
         self.cards.insert(i, card) 
-
+    def remove(self, card_list):
+        self.cards = [c for c in self.cards if c not in card_list]
 
 class Board:
     def __init__(self, starting_cards):

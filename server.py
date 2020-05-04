@@ -46,7 +46,6 @@ class Pasur():
         self.uids = [] # list of uids to maintain order
         self.deck = Deck()
         self.board = None
-        self.last_move = None
 
 
     def add_users(self, uid):
@@ -102,8 +101,8 @@ class Pasur():
         print(self.board.cards)
         if self.ticker % 8 == 0:
             self.deal()
-        turn_data = json.loads(json.dumps((self.board.cards, self.last_move, True), cls=PasurJSONEncoder, indent=4))
-        wait_data = json.loads(json.dumps((self.board.cards, self.last_move, False), cls=PasurJSONEncoder, indent=4))
+        turn_data = json.loads(json.dumps((self.board.cards, True), cls=PasurJSONEncoder, indent=4))
+        wait_data = json.loads(json.dumps((self.board.cards, False), cls=PasurJSONEncoder, indent=4))
         if self.ticker % 2 == 0:
             socketio.emit("action", turn_data, room=self.uids[0])
             socketio.emit("action", wait_data, room=self.uids[1])
@@ -134,7 +133,6 @@ def player_action(data):
         pasur.board.add(move.played)
     else:  
         pasur.board.remove(move.taken)
-    pasur.last_move = move
     print(move)
     user_index = pasur.ticker % 2
     player = pasur.users[pasur.uids[user_index]]
