@@ -139,12 +139,19 @@ class HumanUser(User):
             while not can_move:
                 try:
                     card_index = int(input(INSTR_1))
+                except KeyboardInterrupt:
+                    sys.exit()
                 except:
                     continue
                 if card_index >= len(self.current_hand):
                     continue
                 card = self.current_hand[card_index]
-                locs = input(INSTR_2)
+                try:
+                    locs = input(INSTR_2)
+                except KeyboardInterrupt:
+                    sys.exit()
+                except:
+                    continue
                 locations = [int(x) for x in locs.split()]
                 can_move = self.is_valid_turn(card, board, locations)
                 if not can_move:
