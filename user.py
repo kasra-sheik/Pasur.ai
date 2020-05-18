@@ -23,6 +23,7 @@ class User():
         self.socketio.on("action", self.action)
         self.socketio.on("receive_move", self.receive_move)
         self.socketio.on("result", self.result)
+        self.socketio.on("result", self.result)
 
         self.socketio.connect()
         self.socketio.wait()
@@ -36,11 +37,31 @@ class User():
     def deal(self, new_hand):
         pass
 
+    def deal(self, hand):
+        # accept cards and put into hand
+        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
+
     def action(self, data):
         pass
 
-    def receive_move(self, data):
+    def receive_move(self, move_json, my_move):
         pass
+
+    def result(self, data):
+        pass
+
+    def make_move(self, card, board, locations):
+        move = Move()
+        move.played = card
+        if card.number == 11:
+            move.taken = [c for c in board.cards if c.number < 12]
+            move.taken.append(card)
+        elif not locations: # placed card on board
+            move.taken = []
+        else: #not jack, not empty
+            move.taken = [card]
+            move.taken.extend([board.cards[loc] for loc in locations])
+        return move
 
     def is_valid_turn(self, card, board, locations):
         # card is type Card
@@ -100,7 +121,9 @@ class HumanUser(User):
         # print("Your hand")
         # printAscii(self.current_hand)
 
+
     def receive_move(self, move_json, my_move):
+        # receive previious move from server
         move = get_move_from_json(move_json)
         if not my_move:
             print("Opponent made move \n{}".format(str(move)))
@@ -109,8 +132,10 @@ class HumanUser(User):
         print()
 
     def action(self, game_state):
+        # make move
         # game_state[0] -> board.cards
         # game_state[1] -> your_turn
+
         board_cards = [Card(card['number'], card['suit']) for card in game_state[0]]
         board = Board(board_cards)
         print("Board")
@@ -135,30 +160,27 @@ class HumanUser(User):
                 if card_index >= len(self.current_hand):
                     continue
                 card = self.current_hand[card_index]
-                locs = input(INSTR_2)
+                try:
+                    locs = input(INSTR_2)
+                except KeyboardInterrupt:
+                    sys.exit()
+                except:
+                    continue
                 locations = [int(x) for x in locs.split()]
                 can_move = self.is_valid_turn(card, board, locations)
                 if not can_move:
                     print("Invalid Move. Please try again")
                 else:
                     print()
-                    self.make_move(card, board, locations)
+                    move = self.make_move(card, board, locations)
+                    move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
+                    self.socketio.emit('player_action', move_data)
+                    self.current_hand.remove(card)
+        
 
-    
-    def make_move(self, card, board, locations):
-        move = Move()
-        move.played = card
-        if card.number == 11:
-            move.taken = [c for c in board.cards if c.number < 12]
-            move.taken.append(card)
-        elif not locations: # placed card on board
-            move.taken = []
-        else: #not jack, not empty
-            move.taken = [card]
-            move.taken.extend([board.cards[loc] for loc in locations])
-        move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
-        self.socketio.emit('player_action', move_data)
-        self.current_hand.remove(card)
+    def result(self, data):
+        print(result)
+        pass
             
 # end of Human_User
 
@@ -174,5 +196,6 @@ def printAscii(cards):
         print()
     for file in files:
         file.close()
-    
-human = HumanUser(sys.argv[1])
+  
+if __name__ == '__main__':  
+    human = HumanUser(sys.argv[1])

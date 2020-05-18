@@ -48,7 +48,6 @@ class Pasur():
         self.board = None
         self.last_taken = None
 
-
     def add_users(self, uid):
         user = Player(uid)
         self.users[uid] = user
