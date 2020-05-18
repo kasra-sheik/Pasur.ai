@@ -46,7 +46,7 @@ class Pasur():
         self.uids = [] # list of uids to maintain order
         self.deck = Deck()
         self.board = None
-        self.last_move = None
+        self.last_taken = None
 
 
     def add_users(self, uid):
@@ -70,6 +70,9 @@ class Pasur():
         self.board = Board(cards)
         print(self.board.cards)
         self.prompt_action()
+        pass
+
+    def allocate_last_cards(self):
         pass
 
     def next_round(self):
@@ -102,8 +105,8 @@ class Pasur():
         print(self.board.cards)
         if self.ticker % 8 == 0:
             self.deal()
-        turn_data = json.loads(json.dumps((self.board.cards, self.last_move, True), cls=PasurJSONEncoder, indent=4))
-        wait_data = json.loads(json.dumps((self.board.cards, self.last_move, False), cls=PasurJSONEncoder, indent=4))
+        turn_data = json.loads(json.dumps((self.board.cards, True), cls=PasurJSONEncoder, indent=4))
+        wait_data = json.loads(json.dumps((self.board.cards, False), cls=PasurJSONEncoder, indent=4))
         if self.ticker % 2 == 0:
             socketio.emit("action", turn_data, room=self.uids[0])
             socketio.emit("action", wait_data, room=self.uids[1])
@@ -130,14 +133,15 @@ socketio = SocketIO(app)
 def player_action(data): 
     move_json = json.loads(data)
     move = get_move_from_json(move_json)
+    user_index = pasur.ticker % 2
+    player = pasur.users[pasur.uids[user_index]]
+    print(player.uid)
     if not move.taken:
         pasur.board.add(move.played)
     else:  
         pasur.board.remove(move.taken)
-    pasur.last_move = move
+        pasur.last_taken = player
     print(move)
-    user_index = pasur.ticker % 2
-    player = pasur.users[pasur.uids[user_index]]
     if (move.played.number != 11 and not pasur.board.cards):
         player.surs += 1
     pasur.users[pasur.uids[user_index]].cards.extend(move.taken)
@@ -145,6 +149,7 @@ def player_action(data):
     socketio.emit('broadcast_move', (move_json, False), room=pasur.uids[(user_index+1)%2])
     pasur.ticker -= 1
     if pasur.ticker == 0:
+        pasur.allocate_last_cards()
         pasur.next_round()
     else:
         pasur.prompt_action()

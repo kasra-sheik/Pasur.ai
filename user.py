@@ -105,9 +105,7 @@ class HumanUser(User):
 
     def action(self, game_state):
         # game_state[0] -> board.cards
-        # game_state[1] -> last_move
-        # game_state[2] -> your_turn
-
+        # game_state[1] -> your_turn
         board_cards = [Card(card['number'], card['suit']) for card in game_state[0]]
         board = Board(board_cards)
         print("Board")
@@ -120,11 +118,13 @@ class HumanUser(User):
             print(CARD_HEADER.format(str(i)), end = '')
         print()
         printAscii(self.current_hand)
-        if game_state[2]: 
+        if game_state[1]: 
             can_move = False
             while not can_move:
                 try:
                     card_index = int(input(INSTR_1))
+                except KeyboardInterrupt:
+                    sys.exit()
                 except:
                     continue
                 if card_index >= len(self.current_hand):
