@@ -73,7 +73,7 @@ class Pasur():
         pass
 
     def allocate_last_cards(self):
-        pass
+        self.last_taken.cards.extend(self.board.cards)
 
     def next_round(self):
         points = []
@@ -144,9 +144,9 @@ def player_action(data):
     print(move)
     if (move.played.number != 11 and not pasur.board.cards):
         player.surs += 1
-    pasur.users[pasur.uids[user_index]].cards.extend(move.taken)
-    socketio.emit('broadcast_move', (move_json, True), room=pasur.uids[user_index])
-    socketio.emit('broadcast_move', (move_json, False), room=pasur.uids[(user_index+1)%2])
+    player.cards.extend(move.taken)
+    socketio.emit('receive_move', (move_json, True), room=pasur.uids[user_index])
+    socketio.emit('receive_move', (move_json, False), room=pasur.uids[(user_index+1)%2])
     pasur.ticker -= 1
     if pasur.ticker == 0:
         pasur.allocate_last_cards()

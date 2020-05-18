@@ -21,12 +21,17 @@ class User():
 
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
-        self.socketio.on("broadcast_move", self.broadcast_move)
+        self.socketio.on("receive_move", self.receive_move)
+        self.socketio.on("result", self.result)
 
         self.socketio.connect()
         self.socketio.wait()
 
         # call join game
+
+    def result(self, data):
+        print(data)
+
 
     def deal(self, new_hand):
         pass
@@ -34,7 +39,7 @@ class User():
     def action(self, data):
         pass
 
-    def broadcast_move(self, data):
+    def receive_move(self, data):
         pass
 
     def is_valid_turn(self, card, board, locations):
@@ -95,7 +100,7 @@ class HumanUser(User):
         # print("Your hand")
         # printAscii(self.current_hand)
 
-    def broadcast_move(self, move_json, my_move):
+    def receive_move(self, move_json, my_move):
         move = get_move_from_json(move_json)
         if not my_move:
             print("Opponent made move \n{}".format(str(move)))
