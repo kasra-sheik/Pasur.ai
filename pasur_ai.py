@@ -12,8 +12,8 @@ PADDING = .1
 EMPTY_BOARD_CONSTANT = 1.5
 CARDS_TAKEN_CONSTANT = 0.1
 PLAYED_JACK_CONSTANT = -0.8
-HAVE_COMPLIMENT_CONSTANT = 0.8
-CARD_EXISTS_CONSTANT = 0.3
+HAVE_COMPLIMENT_CONSTANT = 0.6
+CARD_EXISTS_CONSTANT = 0.4
 
 class AIUser(User):
 
@@ -108,46 +108,62 @@ class AIUser(User):
             for card in self.deck.cards:
                 if card.number == compliment:
                     comp_value += self.card_value(card)
-            val -= self.compliment_probability(compliment) * (self.card_value(move.played) + comp_value)
+
+            v = self.compliment_probability(compliment) * (self.card_value(move.played) + comp_value)
+            print("subtracting value for potential opponenet compliment: {}".format(v))
+            val -= v
             if move.played.number < 11:
-                val -= PADDING * self.card_value(move.played)
+                v = PADDING * self.card_value(move.played)
+                print("subtracting padding value {}".format(v))
+                val -= v
             # pad probability to account for jacks and multicard comps
             # face cards dont need padding
             for card in board.cards:
                 if move.played.number == card.number:
+                    print("adding value for card existing on board {}".format(CARD_EXISTS_CONSTANT))
                     val += CARD_EXISTS_CONSTANT
         
         else: 
             val += CARDS_TAKEN_CONSTANT
             if move.played.number == 11:
+                print("subtracting value for playing jack: {}".format(PLAYED_JACK_CONSTANT))
                 val += PLAYED_JACK_CONSTANT
             for card in move.taken:
+                print("ading value for card taken: {}".format(card))
                 val += self.card_value(card)
 
         # check the board for remaining compliments in hand
         for b_c in board_after_move:
             for card in self.current_hand:
                 if card.number == self.get_compliment(b_c) and card != move.played:
-                    val += HAVE_COMPLIMENT_CONSTANT * (self.card_value(b_c) +  self.card_value(card))
+                    v = HAVE_COMPLIMENT_CONSTANT * (self.card_value(b_c) +  self.card_value(card))
+                    print("adding value for compliment in hand: {}".format(v))
+                    val += v
 
         #############
         # Sur Logic #
         #############
         if len(board_after_move) == 0 and move.played.number != 11:
+            print("adding value for sur")
             val += 5
         elif len(board_after_move) == 0:
+            print("adding value for cleared board")
             val += EMPTY_BOARD_CONSTANT
             # TODO: find better constant
         elif len(board_after_move) == 1:
             compliment = self.get_compliment(board_after_move[0])
-            val -= self.compliment_probability(compliment) * 5
+            v = self.compliment_probability(compliment) * 5
+            print("subtracting value for sur potential {}".format(v))
+            val -= v
             pass
         else: # at least 2 cards on the board
             board_sum = 0
             for card in board_after_move:
                 board_sum += card.number
             if board_sum < 11:
-                val -= self.compliment_probability(11 - board_sum) * 5
+                v = self.compliment_probability(11 - board_sum) * 5
+                print("subtracting value for sur potential {}".format(v))
+                val -= v
 
         print("Move: {}".format(move))
         print("Board after move: {}".format(board_after_move))
@@ -160,12 +176,15 @@ class AIUser(User):
 
         board_cards = [Card(card['number'], card['suit']) for card in game_state[0]]
         board = Board(board_cards)
+        print("Board: ")
+        printAscii(board_cards)
 
         # make move
         if game_state[1]:
             print("\n My turn \n My hand: {} \n".format(self.current_hand))
+            printAscii(self.current_hand)
             move_list = self.get_all_moves(board)
-            best_move = (-1.0, None)
+            best_move = (-10.0, None)
             for move in move_list:
                 val = self.move_heurisitic(move, board)
                 print("Move Value: {} \n".format(val))
@@ -193,9 +212,18 @@ class AIUser(User):
         self.deck.remove(self.current_hand)
 
 
-    def result(self, data):
-        # receive result after game
-        pass
+def printAscii(cards): # cards is a list of cards
+    files = []
+    for card in cards:
+            file = card_dict[(card.number, card.suit)]
+            path = "ascii-cards/{0}".format(file)
+            files.append(open(path, "r"))
+    for rows in zip(*files):
+        for x in rows:
+            print(x.strip("\n"), end = " ")
+        print()
+    for file in files:
+        file.close()
 
 if __name__ == '__main__':
     ai = AIUser(sys.argv[1])

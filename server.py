@@ -78,13 +78,13 @@ class Pasur():
         points = []
         threshold = False
         for i in self.uids:
-            pts = self.users[uid].count_points()
+            pts = self.users[i].count_points()
             points.append(pts)
             if pts >= FINAL_SCORE:
                 threshold = True
         if threshold and points[0] != points[1]:
             self.declare_winner(points)
-        self.start_game()
+        #self.start_game()
 
     def declare_winner(self, points):
         # uids[0] has points[0] amount of points
@@ -94,8 +94,8 @@ class Pasur():
         winner_pts = points[winner_index]
         loser_uid = self.uids[loser_index]
         loser_pts = points[loser_index]
-        result ="Player {0} has won the game!\nFinal Score: {0}:{1}, {2}:{3}\n"
-        result.format(winner_uid, winner_pts, loser_uid, loser_pts)
+        result = "Player {a} has won the game!\nFinal Score: {a}:{b}, {c}:{d}\n".format(a=winner_uid, b=winner_pts, c=loser_uid, d=loser_pts)
+        print(result)
         socketio.emit("result", result, room=self.uids[0])
         socketio.emit("result", result, room=self.uids[1])
 
@@ -122,7 +122,7 @@ class Pasur():
 
 pasur = Pasur()
 REPALCE_JACKS = True
-FINAL_SCORE = 30
+FINAL_SCORE = 9
 
 app = Flask(__name__)
 app.json_encoder = PasurJSONEncoder
