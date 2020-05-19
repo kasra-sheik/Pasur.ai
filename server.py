@@ -3,11 +3,19 @@ from flask.json import JSONEncoder
 from flask_socketio import SocketIO, emit, join_room
 import json
 
+from pasur_state import *
+
 import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-from pasur_state import *
+app = Flask(__name__)
+app.json_encoder = PasurJSONEncoder
+socketio = SocketIO(app)
+
+
+REPALCE_JACKS = True
+FINAL_SCORE = 9
 
 # GAME MANAGER
 
@@ -120,13 +128,6 @@ class Pasur():
             data = json.loads(json.dumps(new_cards, cls=PasurJSONEncoder, indent=4))
             socketio.emit("deal", data, room=user)
 
-pasur = Pasur()
-REPALCE_JACKS = True
-FINAL_SCORE = 9
-
-app = Flask(__name__)
-app.json_encoder = PasurJSONEncoder
-socketio = SocketIO(app)
 
 @socketio.on('player_action')
 def player_action(data): 
@@ -165,6 +166,7 @@ def join_game(user):
         print("error, uid already exists")
         # implement rebraodcasting to change uid
 
+pasur = Pasur()
 
 if __name__ == '__main__':
     socketio.run(app)
