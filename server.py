@@ -3,11 +3,19 @@ from flask.json import JSONEncoder
 from flask_socketio import SocketIO, emit, join_room
 import json
 
+from pasur_state import *
+
 import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-from pasur_state import *
+app = Flask(__name__)
+app.json_encoder = PasurJSONEncoder
+socketio = SocketIO(app)
+
+
+REPALCE_JACKS = True
+FINAL_SCORE = 9
 
 # GAME MANAGER
 
@@ -46,7 +54,7 @@ class Pasur():
         self.uids = [] # list of uids to maintain order
         self.deck = Deck()
         self.board = None
-
+        self.last_taken = None
 
     def add_users(self, uid):
         user = Player(uid)
@@ -71,17 +79,20 @@ class Pasur():
         self.prompt_action()
         pass
 
+    def allocate_last_cards(self):
+        self.last_taken.cards.extend(self.board.cards)
+
     def next_round(self):
         points = []
         threshold = False
         for i in self.uids:
-            pts = self.users[uid].count_points()
+            pts = self.users[i].count_points()
             points.append(pts)
             if pts >= FINAL_SCORE:
                 threshold = True
         if threshold and points[0] != points[1]:
             self.declare_winner(points)
-        self.start_game()
+        #self.start_game()
 
     def declare_winner(self, points):
         # uids[0] has points[0] amount of points
@@ -91,8 +102,8 @@ class Pasur():
         winner_pts = points[winner_index]
         loser_uid = self.uids[loser_index]
         loser_pts = points[loser_index]
-        result ="Player {0} has won the game!\nFinal Score: {0}:{1}, {2}:{3}\n"
-        result.format(winner_uid, winner_pts, loser_uid, loser_pts)
+        result = "Player {a} has won the game!\nFinal Score: {a}:{b}, {c}:{d}\n".format(a=winner_uid, b=winner_pts, c=loser_uid, d=loser_pts)
+        print(result)
         socketio.emit("result", result, room=self.uids[0])
         socketio.emit("result", result, room=self.uids[1])
 
@@ -117,32 +128,28 @@ class Pasur():
             data = json.loads(json.dumps(new_cards, cls=PasurJSONEncoder, indent=4))
             socketio.emit("deal", data, room=user)
 
-pasur = Pasur()
-REPALCE_JACKS = True
-FINAL_SCORE = 30
-
-app = Flask(__name__)
-app.json_encoder = PasurJSONEncoder
-socketio = SocketIO(app)
 
 @socketio.on('player_action')
 def player_action(data): 
     move_json = json.loads(data)
     move = get_move_from_json(move_json)
+    user_index = pasur.ticker % 2
+    player = pasur.users[pasur.uids[user_index]]
+    print(player.uid)
     if not move.taken:
         pasur.board.add(move.played)
     else:  
         pasur.board.remove(move.taken)
+        pasur.last_taken = player
     print(move)
-    user_index = pasur.ticker % 2
-    player = pasur.users[pasur.uids[user_index]]
     if (move.played.number != 11 and not pasur.board.cards):
         player.surs += 1
-    pasur.users[pasur.uids[user_index]].cards.extend(move.taken)
-    socketio.emit('broadcast_move', (move_json, True), room=pasur.uids[user_index])
-    socketio.emit('broadcast_move', (move_json, False), room=pasur.uids[(user_index+1)%2])
+    player.cards.extend(move.taken)
+    socketio.emit('receive_move', (move_json, True), room=pasur.uids[user_index])
+    socketio.emit('receive_move', (move_json, False), room=pasur.uids[(user_index+1)%2])
     pasur.ticker -= 1
     if pasur.ticker == 0:
+        pasur.allocate_last_cards()
         pasur.next_round()
     else:
         pasur.prompt_action()
@@ -159,6 +166,7 @@ def join_game(user):
         print("error, uid already exists")
         # implement rebraodcasting to change uid
 
+pasur = Pasur()
 
 if __name__ == '__main__':
     socketio.run(app)

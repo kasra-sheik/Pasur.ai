@@ -21,14 +21,16 @@ class User():
 
         self.socketio.on("deal", self.deal)
         self.socketio.on("action", self.action)
-        self.socketio.on("broadcast_move", self.receive_move)
+        self.socketio.on("receive_move", self.receive_move)
         self.socketio.on("result", self.result)
-
 
         self.socketio.connect()
         self.socketio.wait()
 
         # call join game
+
+    def result(self, data):
+        print(data)
 
     def deal(self, hand):
         # accept cards and put into hand
@@ -38,9 +40,6 @@ class User():
         pass
 
     def receive_move(self, move_json, my_move):
-        pass
-
-    def result(self, data):
         pass
 
     def make_move(self, card, board, locations):
@@ -108,6 +107,13 @@ class User():
 
 class HumanUser(User):
 
+    def deal(self, hand):
+
+        self.current_hand = [Card(card['number'], card['suit']) for card in hand]
+        # print("Your hand")
+        # printAscii(self.current_hand)
+
+
     def receive_move(self, move_json, my_move):
         # receive previious move from server
         move = get_move_from_json(move_json)
@@ -162,11 +168,6 @@ class HumanUser(User):
                     move_data = json.dumps(move, cls=PasurJSONEncoder, indent=4)
                     self.socketio.emit('player_action', move_data)
                     self.current_hand.remove(card)
-        
-
-    def result(self, data):
-        print(result)
-        pass
             
 # end of Human_User
 
